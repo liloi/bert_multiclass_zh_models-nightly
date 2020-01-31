@@ -154,8 +154,8 @@ def run_bert_classifier(strategy,
   # Defines evaluation metrics function, which will create metrics in the
   # correct device and strategy scope.
   def metric_fn():
-    return (tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32),
-            tf.keras.metrics.SparseCategoricalAccuracy('accuracy2', dtype=tf.float32))
+    return tf.keras.metrics.SparseCategoricalAccuracy(
+        'test_accuracy', dtype=tf.float32)
 
   if use_keras_compile_fit:
     # Start training using Keras compile/fit API.
@@ -214,6 +214,8 @@ def run_keras_compile_fit(model_dir,
     evaluation_dataset = eval_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
+
+    logging.info(bert_model.summary())
 
     if init_checkpoint:
       checkpoint = tf.train.Checkpoint(model=sub_model)
