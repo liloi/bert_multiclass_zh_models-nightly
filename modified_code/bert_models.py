@@ -312,7 +312,8 @@ def classifier_model(bert_config,
                      num_labels,
                      max_seq_length,
                      final_layer_initializer=None,
-                     hub_module_url=None):
+                     hub_module_url=None,
+                     is_training=True):
   """BERT classifier model in functional API style.
 
   Construct a Keras model for predicting `num_labels` outputs from an input with
@@ -352,7 +353,7 @@ def classifier_model(bert_config,
       shape=(max_seq_length,), dtype=tf.int32, name='input_mask')
   input_type_ids = tf.keras.layers.Input(
       shape=(max_seq_length,), dtype=tf.int32, name='input_type_ids')
-  bert_model = hub.KerasLayer(hub_module_url, trainable=False)
+  bert_model = hub.KerasLayer(hub_module_url, trainable=is_training)
   pooled_output, _ = bert_model([input_word_ids, input_mask, input_type_ids])
   output = tf.keras.layers.Dropout(rate=bert_config.hidden_dropout_prob)(
       pooled_output)
