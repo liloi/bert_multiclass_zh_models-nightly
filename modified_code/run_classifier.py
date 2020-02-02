@@ -59,13 +59,9 @@ flags.DEFINE_string(
 flags.DEFINE_integer('train_batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('eval_batch_size', 32, 'Batch size for evaluation.')
 
-flags.DEFINE_string(
-    'save_history_path', None,
-    'Path to history file.')
-
-flags.DEFINE_string(
-    'save_metric_path', None,
-    'Path to custom metric file.')
+flags.DEFINE_string('save_history_path', None, 'Path to history file.')
+flags.DEFINE_string('save_metric_path', None, 'Path to custom metric file.')
+flags.DEFINE_boolean('is_training', True, 'if params is trainable')
 
 common_flags.define_common_bert_flags()
 
