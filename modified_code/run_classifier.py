@@ -25,7 +25,9 @@ import os
 from absl import app
 from absl import flags
 from absl import logging
+import custom_metrics
 import tensorflow as tf
+import pickle
 
 # pylint: disable=g-import-not-at-top,redefined-outer-name,reimported
 from official.modeling import model_training_utils
@@ -37,6 +39,7 @@ from official.nlp.bert import input_pipeline
 from official.nlp.bert import model_saving_utils
 from official.utils.misc import distribution_utils
 from official.utils.misc import keras_utils
+
 
 flags.DEFINE_enum(
     'mode', 'train_and_eval', ['train_and_eval', 'export_only'],
@@ -55,6 +58,14 @@ flags.DEFINE_string(
     'to be used for training and evaluation.')
 flags.DEFINE_integer('train_batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('eval_batch_size', 32, 'Batch size for evaluation.')
+
+flags.DEFINE_string(
+    'save_history_path', None,
+    'Path to history file.')
+
+flags.DEFINE_string(
+    'save_metric_path', None,
+    'Path to custom metric file.')
 
 common_flags.define_common_bert_flags()
 
@@ -214,7 +225,13 @@ def run_keras_compile_fit(model_dir,
     evaluation_dataset = eval_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
-
+    for l in bert_model.layers:
+        logging.info("{}-->{}".format(l.name, l.trainable))
+        if l.name == 'transformer_encoder':
+            if l.trainable:
+                l.trainable = False
+            logging.info("{}-->True to False".format(l.name, l.trainable))
+            pass
     logging.info(bert_model.summary())
 
     if init_checkpoint:
@@ -229,12 +246,15 @@ def run_keras_compile_fit(model_dir,
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         checkpoint_path, save_weights_only=True)
 
-    if custom_callbacks is not None:
-      custom_callbacks += [summary_callback, checkpoint_callback]
-    else:
-      custom_callbacks = [summary_callback, checkpoint_callback]
+    eval_data_list = list(evaluation_dataset.as_numpy_iterator())
+    custom_metric = custom_metrics.Metrics(valid_data=eval_data_list[0])
 
-    bert_model.fit(
+    if custom_callbacks is not None:
+      custom_callbacks += [custom_metric, summary_callback, checkpoint_callback]
+    else:
+      custom_callbacks = [custom_metric, summary_callback, checkpoint_callback]
+
+    history = bert_model.fit(
         x=training_dataset,
         validation_data=evaluation_dataset,
         steps_per_epoch=steps_per_epoch,
@@ -242,7 +262,7 @@ def run_keras_compile_fit(model_dir,
         validation_steps=eval_steps,
         callbacks=custom_callbacks)
 
-    return bert_model
+    return bert_model, history, custom_metric
 
 
 def export_classifier(model_export_path, input_meta_data,
@@ -318,7 +338,7 @@ def run_bert(strategy,
   if not strategy:
     raise ValueError('Distribution strategy has not been specified.')
 
-  trained_model = run_bert_classifier(
+  trained_model, history, custom_metric = run_bert_classifier(
       strategy,
       bert_config,
       input_meta_data,
@@ -343,7 +363,7 @@ def run_bert(strategy,
         FLAGS.model_export_path,
         model=trained_model,
         restore_model_using_load_weights=FLAGS.use_keras_compile_fit)
-  return trained_model
+  return trained_model, history, custom_metric
 
 
 def main(_):
@@ -372,8 +392,18 @@ def main(_):
       FLAGS.eval_batch_size,
       is_training=False)
 
-  run_bert(strategy, input_meta_data, train_input_fn, eval_input_fn)
+  _, history, custom_metric = run_bert(strategy, input_meta_data, train_input_fn, eval_input_fn)
 
+  with open(FLAGS.save_history_path, 'wb') as f:
+    pickle.dump(history.history, f)
+
+  save_metric = {
+          'f1': custom_metric.val_f1s,
+          'recall': custom_metric.val_recalls,
+          'precision': custom_metric.val_precisions,
+          'reports': custom_metric.reports}
+  with open(FLAGS.save_metric_path, 'wb') as f:
+    pickle.dump(save_metric, f)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')
