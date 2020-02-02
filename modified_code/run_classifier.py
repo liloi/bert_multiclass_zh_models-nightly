@@ -217,7 +217,7 @@ def run_keras_compile_fit(model_dir,
                           steps_per_epoch,
                           eval_steps,
                           custom_callbacks=None,
-                          is_training):
+                          is_training=True):
   """Runs BERT classifier model using Keras compile/fit API."""
 
   with strategy.scope():
