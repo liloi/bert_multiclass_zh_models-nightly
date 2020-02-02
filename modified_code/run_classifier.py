@@ -396,7 +396,6 @@ def main(_):
 
   with open(FLAGS.save_history_path, 'wb') as f:
     pickle.dump(history.history, f)
-
   save_metric = {
           'f1': custom_metric.val_f1s,
           'recall': custom_metric.val_recalls,
