@@ -184,7 +184,6 @@ def run_bert_classifier(strategy,
         eval_steps,
         custom_callbacks=None,
         is_training=is_training)
-
   # Use user-defined loop to start training.
   logging.info('Training using customized training loop TF 2.0 with '
                'distribution strategy.')
