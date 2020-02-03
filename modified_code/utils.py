@@ -23,6 +23,18 @@ class MetricPlot(object):
             class_list.remove('weighted avg')
             class_list = sorted(class_list)
 
+            # 每个类别分别打印precision、recall、f1
+            class_num = len(class_list)
+            for c in range(class_num)
+                plt.subplot(class_num, 1, c + 1)
+                for m in {'precision', 'recall', 'f1-score'}:
+                    plt.plot([report[str(c)][m] for report in reports],
+                            label='Class {0} {1}'.format(c, m))
+                    plt.legend(loc='lower right')
+                    plt.ylabel('Class {}'.format(c))
+                    plt.title('Class {} Curves'.format(c))
+            plt.show()
+            """
             plt.subplot(3, 1, 1)
             m = 'precision'
             for c in class_list:
@@ -49,8 +61,8 @@ class MetricPlot(object):
             plt.legend(loc='lower right')
             plt.ylabel(m)
             plt.title('Validation {} Curve'.format(m))
-
             plt.show()
+            """
 
     def draw_metric_curves(self):
         with open(self.file_pickle + '/metric/metric.pickle', 'rb') as f:
@@ -121,4 +133,4 @@ class MetricPlot(object):
 
 if __name__ == '__main__':
     c = MetricPlot('/home/work/liran05/xxx')
-    #c.draw_metric_curves()
+    c.draw_metric_curves()
