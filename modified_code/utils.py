@@ -12,7 +12,6 @@ class MetricPlot(object):
             metric_data = pickle.load(f)
             reports = metric_data['reports']
             style.use("bmh")
-            plt.figure(figsize=(8, 12))
 
             class_list = []
             for report in reports:
@@ -25,6 +24,7 @@ class MetricPlot(object):
 
             # 每个类别分别打印precision、recall、f1
             class_num = len(class_list)
+            plt.figure(figsize=(8, class_num * 4))
             for c in range(class_num):
                 plt.subplot(class_num, 1, c + 1)
                 for m in {'precision', 'recall', 'f1-score'}:
