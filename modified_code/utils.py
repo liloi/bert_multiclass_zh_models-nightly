@@ -25,7 +25,7 @@ class MetricPlot(object):
 
             # 每个类别分别打印precision、recall、f1
             class_num = len(class_list)
-            for c in range(class_num)
+            for c in range(class_num):
                 plt.subplot(class_num, 1, c + 1)
                 for m in {'precision', 'recall', 'f1-score'}:
                     plt.plot([report[str(c)][m] for report in reports],
