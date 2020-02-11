@@ -404,7 +404,7 @@ class BdbkProcessor(DataProcessor):
         """See base class."""
         #return ["0", "1", "2", "3", "4", "5", "6", "7"]
         #return ["poi", "出版物", "机构", "科技", "历史军事", "其他", "人物", "社会", "生活", "网络小说", "文化", "医疗", "娱乐", "自然", "组织"]
-        return ['poi', 'pub', 'ins', 'sci', 'hist', 'other', 'human', 'soc', 'life' 'webfic', 'cul', 'med', 'play', 'nature', 'org']
+        return ['poi', 'pub', 'ins', 'sci', 'hist', 'other', 'human', 'soc', 'life', 'webfic', 'cul', 'med', 'play', 'nature', 'org']
 
     @staticmethod
     def get_processor_name():
