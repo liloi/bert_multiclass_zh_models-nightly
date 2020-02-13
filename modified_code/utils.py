@@ -1,3 +1,4 @@
+#-*- encoding:utf-8 -*-
 import pdb
 import pickle
 import matplotlib.pyplot as plt
@@ -20,15 +21,14 @@ class MetricPlot(object):
             class_list.remove('accuracy')
             class_list.remove('macro avg')
             class_list.remove('weighted avg')
-            class_list = sorted(class_list)
 
             # 每个类别分别打印precision、recall、f1
             class_num = len(class_list)
             plt.figure(figsize=(8, class_num * 4))
-            for c in range(class_num):
-                plt.subplot(class_num, 1, c + 1)
+            for i, v in enumerate(class_list):
+                plt.subplot(class_num, 1, i + 1)
                 for m in {'precision', 'recall', 'f1-score'}:
-                    plt.plot([report[str(c)][m] for report in reports],
+                    plt.plot([report[str(v)][m] for report in reports],
                             label='Class {0} {1}'.format(c, m))
                     plt.legend(loc='lower right')
                     plt.ylabel('Class {}'.format(c))
@@ -103,5 +103,5 @@ class MetricPlot(object):
             plt.show()
 
 if __name__ == '__main__':
-    c = MetricPlot('/home/work/liran05/xxx')
-    c.draw_metric_curves()
+    c = MetricPlot('/home/disk2/liran05/github/tensorflow/models/official/nlp/bert/process_dir')
+    c.draw_all_curves()
