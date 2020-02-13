@@ -23,43 +23,12 @@ import tensorflow_hub as hub
 
 from official.modeling import tf_utils
 from official.nlp import bert_modeling
+from official.nlp.albert import configs as albert_configs
 from official.nlp.modeling import losses
 from official.nlp.modeling import networks
 from official.nlp.modeling.networks import bert_classifier
 from official.nlp.modeling.networks import bert_pretrainer
 from official.nlp.modeling.networks import bert_span_labeler
-
-
-def gather_indexes(sequence_tensor, positions):
-  """Gathers the vectors at the specific positions.
-
-  Args:
-      sequence_tensor: Sequence output of `BertModel` layer of shape
-        (`batch_size`, `seq_length`, num_hidden) where num_hidden is number of
-        hidden units of `BertModel` layer.
-      positions: Positions ids of tokens in sequence to mask for pretraining of
-        with dimension (batch_size, max_predictions_per_seq) where
-        `max_predictions_per_seq` is maximum number of tokens to mask out and
-        predict per each sequence.
-
-  Returns:
-      Masked out sequence tensor of shape (batch_size * max_predictions_per_seq,
-      num_hidden).
-  """
-  sequence_shape = tf_utils.get_shape_list(
-      sequence_tensor, name='sequence_output_tensor')
-  batch_size = sequence_shape[0]
-  seq_length = sequence_shape[1]
-  width = sequence_shape[2]
-
-  flat_offsets = tf.keras.backend.reshape(
-      tf.range(0, batch_size, dtype=tf.int32) * seq_length, [-1, 1])
-  flat_positions = tf.keras.backend.reshape(positions + flat_offsets, [-1])
-  flat_sequence_tensor = tf.keras.backend.reshape(
-      sequence_tensor, [batch_size * seq_length, width])
-  output_tensor = tf.gather(flat_sequence_tensor, flat_positions)
-
-  return output_tensor
 
 
 class BertPretrainLossAndMetricLayer(tf.keras.layers.Layer):
@@ -99,14 +68,14 @@ class BertPretrainLossAndMetricLayer(tf.keras.layers.Layer):
   def call(self, lm_output, sentence_output, lm_label_ids, lm_label_weights,
            sentence_labels):
     """Implements call() for the layer."""
-    lm_label_weights = tf.keras.backend.cast(lm_label_weights, tf.float32)
+    lm_label_weights = tf.cast(lm_label_weights, tf.float32)
 
     mask_label_loss = losses.weighted_sparse_categorical_crossentropy_loss(
         labels=lm_label_ids, predictions=lm_output, weights=lm_label_weights)
     sentence_loss = losses.weighted_sparse_categorical_crossentropy_loss(
         labels=sentence_labels, predictions=sentence_output)
     loss = mask_label_loss + sentence_loss
-    batch_shape = tf.slice(tf.keras.backend.shape(sentence_labels), [0], [1])
+    batch_shape = tf.slice(tf.shape(sentence_labels), [0], [1])
     # TODO(hongkuny): Avoids the hack and switches add_loss.
     final_loss = tf.fill(batch_shape, loss)
 
@@ -117,14 +86,12 @@ class BertPretrainLossAndMetricLayer(tf.keras.layers.Layer):
 
 
 def get_transformer_encoder(bert_config,
-                            sequence_length,
-                            float_dtype=tf.float32):
+                            sequence_length):
   """Gets a 'TransformerEncoder' object.
 
   Args:
     bert_config: A 'modeling.BertConfig' or 'modeling.AlbertConfig' object.
     sequence_length: Maximum sequence length of the training data.
-    float_dtype: tf.dtype, tf.float32 or tf.float16.
 
   Returns:
     A networks.TransformerEncoder object.
@@ -142,9 +109,8 @@ def get_transformer_encoder(bert_config,
       max_sequence_length=bert_config.max_position_embeddings,
       type_vocab_size=bert_config.type_vocab_size,
       initializer=tf.keras.initializers.TruncatedNormal(
-          stddev=bert_config.initializer_range),
-      float_dtype=float_dtype.name)
-  if isinstance(bert_config, bert_modeling.AlbertConfig):
+          stddev=bert_config.initializer_range))
+  if isinstance(bert_config, albert_configs.AlbertConfig):
     kwargs['embedding_width'] = bert_config.embedding_size
     return networks.AlbertTransformerEncoder(**kwargs)
   else:
@@ -223,10 +189,9 @@ def pretrain_model(bert_config,
 class BertSquadLogitsLayer(tf.keras.layers.Layer):
   """Returns a layer that computes custom logits for BERT squad model."""
 
-  def __init__(self, initializer=None, float_type=tf.float32, **kwargs):
+  def __init__(self, initializer=None, **kwargs):
     super(BertSquadLogitsLayer, self).__init__(**kwargs)
     self.initializer = initializer
-    self.float_type = float_type
 
   def build(self, unused_input_shapes):
     """Implements build() for the layer."""
@@ -243,20 +208,16 @@ class BertSquadLogitsLayer(tf.keras.layers.Layer):
     sequence_length = input_shape[1]
     num_hidden_units = input_shape[2]
 
-    final_hidden_input = tf.keras.backend.reshape(sequence_output,
-                                                  [-1, num_hidden_units])
+    final_hidden_input = tf.reshape(sequence_output, [-1, num_hidden_units])
     logits = self.final_dense(final_hidden_input)
-    logits = tf.keras.backend.reshape(logits, [-1, sequence_length, 2])
+    logits = tf.reshape(logits, [-1, sequence_length, 2])
     logits = tf.transpose(logits, [2, 0, 1])
     unstacked_logits = tf.unstack(logits, axis=0)
-    if self.float_type == tf.float16:
-      unstacked_logits = tf.cast(unstacked_logits, tf.float32)
     return unstacked_logits[0], unstacked_logits[1]
 
 
 def squad_model(bert_config,
                 max_seq_length,
-                float_type,
                 initializer=None,
                 hub_module_url=None):
   """Returns BERT Squad model along with core BERT model to import weights.
@@ -264,7 +225,6 @@ def squad_model(bert_config,
   Args:
     bert_config: BertConfig, the config defines the core Bert model.
     max_seq_length: integer, the maximum input sequence length.
-    float_type: tf.dtype, tf.float32 or tf.bfloat16.
     initializer: Initializer for the final dense layer in the span labeler.
       Defaulted to TruncatedNormal initializer.
     hub_module_url: TF-Hub path/url to Bert module.
@@ -277,8 +237,7 @@ def squad_model(bert_config,
     initializer = tf.keras.initializers.TruncatedNormal(
         stddev=bert_config.initializer_range)
   if not hub_module_url:
-    bert_encoder = get_transformer_encoder(bert_config, max_seq_length,
-                                           float_type)
+    bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
     return bert_span_labeler.BertSpanLabeler(
         network=bert_encoder, initializer=initializer), bert_encoder
 
@@ -293,7 +252,7 @@ def squad_model(bert_config,
       [input_word_ids, input_mask, input_type_ids])
 
   squad_logits_layer = BertSquadLogitsLayer(
-      initializer=initializer, float_type=float_type, name='squad_logits')
+      initializer=initializer, name='squad_logits')
   start_logits, end_logits = squad_logits_layer(sequence_output)
 
   squad = tf.keras.Model(
@@ -308,7 +267,6 @@ def squad_model(bert_config,
 
 
 def classifier_model(bert_config,
-                     float_type,
                      num_labels,
                      max_seq_length,
                      final_layer_initializer=None,
@@ -322,7 +280,6 @@ def classifier_model(bert_config,
   Args:
     bert_config: BertConfig or AlbertConfig, the config defines the core
       BERT or ALBERT model.
-    float_type: dtype, tf.float32 or tf.bfloat16.
     num_labels: integer, the number of classes.
     max_seq_length: integer, the maximum input sequence length.
     final_layer_initializer: Initializer for final dense layer. Defaulted
@@ -361,8 +318,7 @@ def classifier_model(bert_config,
   output = tf.keras.layers.Dense(
       num_labels,
       kernel_initializer=initializer,
-      name='output',
-      dtype=float_type)(
+      name='output')(
           output)
   return tf.keras.Model(
       inputs={
