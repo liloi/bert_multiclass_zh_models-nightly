@@ -4,7 +4,7 @@ import numpy as np
 import pdb
 
 class Metrics(Callback):
-    def __init__(self, valid_data, labels_list):
+    def __init__(self, labels_list, valid_data):
         super(Metrics, self).__init__()
         self.validation_data = valid_data
         self.val_f1s = []
