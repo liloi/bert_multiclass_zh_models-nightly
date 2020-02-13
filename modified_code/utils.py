@@ -28,11 +28,11 @@ class MetricPlot(object):
             for i, v in enumerate(class_list):
                 plt.subplot(class_num, 1, i + 1)
                 for m in {'precision', 'recall', 'f1-score'}:
-                    plt.plot([report[str(v)][m] for report in reports],
-                            label='Class {0} {1}'.format(c, m))
+                    plt.plot([report[v][m] for report in reports],
+                            label='Class {0} {1}'.format(v, m))
                     plt.legend(loc='lower right')
-                    plt.ylabel('Class {}'.format(c))
-                    plt.title('Class {} Curves'.format(c))
+                    plt.ylabel('Class {}'.format(v))
+                    plt.title('Class {} Curves'.format(v))
             plt.show()
 
     def draw_metric_curves(self):
