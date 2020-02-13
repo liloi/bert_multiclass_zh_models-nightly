@@ -36,7 +36,7 @@ class Metrics(Callback):
         # 一并计算三个指标
         report = classification_report(val_targ,
                                        val_predict,
-                                       target_names=labels_list,
+                                       target_names=self.labels_list,
                                        output_dict=True)
         self.reports.append(report)
 
