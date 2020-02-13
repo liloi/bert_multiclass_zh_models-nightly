@@ -34,35 +34,6 @@ class MetricPlot(object):
                     plt.ylabel('Class {}'.format(c))
                     plt.title('Class {} Curves'.format(c))
             plt.show()
-            """
-            plt.subplot(3, 1, 1)
-            m = 'precision'
-            for c in class_list:
-                plt.plot([report[str(c)][m] for report in reports],
-                        label='Class {0} {1}'.format(c, m))
-            plt.legend(loc='lower right')
-            plt.ylabel(m)
-            plt.title('Validation {} Curve'.format(m))
-
-            plt.subplot(3, 1, 2)
-            m = 'recall'
-            for c in class_list:
-                plt.plot([report[str(c)][m] for report in reports],
-                        label='Class {0} {1}'.format(c, m))
-            plt.legend(loc='lower right')
-            plt.ylabel(m)
-            plt.title('Validation {} Curve'.format(m))
-
-            plt.subplot(3, 1, 3)
-            m = 'f1-score'
-            for c in class_list:
-                plt.plot([report[str(c)][m] for report in reports],
-                        label='Class {0} {1}'.format(c, m))
-            plt.legend(loc='lower right')
-            plt.ylabel(m)
-            plt.title('Validation {} Curve'.format(m))
-            plt.show()
-            """
 
     def draw_metric_curves(self):
         with open(self.file_pickle + '/metric/metric.pickle', 'rb') as f:

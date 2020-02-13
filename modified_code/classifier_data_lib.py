@@ -607,6 +607,7 @@ def generate_tf_record_from_data_file(processor,
       "task_type": "bert_classification",
       "processor_type": processor.get_processor_name(),
       "num_labels": len(processor.get_labels()),
+      "labels_list": processor.get_labels(),
       "train_data_size": num_training_data,
       "max_seq_length": max_seq_length,
   }
