@@ -180,8 +180,8 @@ def run_bert_classifier(strategy,
         epochs,
         steps_per_epoch,
         eval_steps,
-        custom_callbacks=None,
         input_meta_data['labels_list'],
+        custom_callbacks=None,
         is_training=is_training)
 
   # Use user-defined loop to start training.
@@ -215,8 +215,8 @@ def run_keras_compile_fit(model_dir,
                           epochs,
                           steps_per_epoch,
                           eval_steps,
+                          labels_list,
                           custom_callbacks=None,
-                          labels_list=[],
                           is_training=True):
   """Runs BERT classifier model using Keras compile/fit API."""
 
