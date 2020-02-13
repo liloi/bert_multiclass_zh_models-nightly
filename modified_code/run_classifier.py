@@ -181,6 +181,7 @@ def run_bert_classifier(strategy,
         steps_per_epoch,
         eval_steps,
         custom_callbacks=None,
+        input_meta_data['labels_list'],
         is_training=is_training)
 
   # Use user-defined loop to start training.
@@ -215,6 +216,7 @@ def run_keras_compile_fit(model_dir,
                           steps_per_epoch,
                           eval_steps,
                           custom_callbacks=None,
+                          labels_list=[],
                           is_training=True):
   """Runs BERT classifier model using Keras compile/fit API."""
 
@@ -247,7 +249,7 @@ def run_keras_compile_fit(model_dir,
         checkpoint_path, save_weights_only=True)
 
     eval_data_list = list(evaluation_dataset.as_numpy_iterator())
-    custom_metric = custom_metrics.Metrics(valid_data=eval_data_list[0])
+    custom_metric = custom_metrics.Metrics(valid_data=eval_data_list[0], labels_list)
 
     if custom_callbacks is not None:
       custom_callbacks += [custom_metric, summary_callback, checkpoint_callback]

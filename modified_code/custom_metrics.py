@@ -4,13 +4,14 @@ import numpy as np
 import pdb
 
 class Metrics(Callback):
-    def __init__(self, valid_data):
+    def __init__(self, valid_data, labels_list):
         super(Metrics, self).__init__()
         self.validation_data = valid_data
         self.val_f1s = []
         self.val_recalls = []
         self.val_precisions = []
         self.reports = []
+        self.labels_list = labels_list
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
@@ -33,7 +34,10 @@ class Metrics(Callback):
         logs['val_f1'] = _val_f1
 
         # 一并计算三个指标
-        report = classification_report(val_targ, val_predict, output_dict=True)
+        report = classification_report(val_targ,
+                                       val_predict,
+                                       target_names=labels_list,
+                                       output_dict=True)
         self.reports.append(report)
 
     def get(self, metrics, of_class):
