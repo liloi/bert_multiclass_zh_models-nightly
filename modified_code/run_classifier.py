@@ -118,8 +118,7 @@ def run_bert_classifier(strategy,
                         eval_input_fn,
                         custom_callbacks=None,
                         run_eagerly=False,
-                        use_keras_compile_fit=False,
-                        is_training=True):
+                        use_keras_compile_fit=False):
   """Run BERT classifier training using low-level API."""
   max_seq_length = input_meta_data['max_seq_length']
   num_classes = input_meta_data['num_labels']
@@ -131,8 +130,7 @@ def run_bert_classifier(strategy,
             bert_config,
             num_classes,
             max_seq_length,
-            hub_module_url=FLAGS.hub_module_url,
-            is_training=is_training))
+            hub_module_url=FLAGS.hub_module_url))
     classifier_model.optimizer = optimization.create_optimizer(
         initial_lr, steps_per_epoch * epochs, warmup_steps)
     if FLAGS.fp16_implementation == 'graph_rewrite':
@@ -180,8 +178,7 @@ def run_bert_classifier(strategy,
         steps_per_epoch,
         eval_steps,
         input_meta_data['labels_list'],
-        custom_callbacks=None,
-        is_training=is_training)
+        custom_callbacks=None)
 
   # Use user-defined loop to start training.
   logging.info('Training using customized training loop TF 2.0 with '
@@ -215,8 +212,7 @@ def run_keras_compile_fit(model_dir,
                           steps_per_epoch,
                           eval_steps,
                           labels_list,
-                          custom_callbacks=None,
-                          is_training=True):
+                          custom_callbacks=None):
   """Runs BERT classifier model using Keras compile/fit API."""
 
   with strategy.scope():
@@ -224,15 +220,6 @@ def run_keras_compile_fit(model_dir,
     evaluation_dataset = eval_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
-
-    if is_training is False:
-        for l in bert_model.layers:
-            logging.info("{}-->{}".format(l.name, l.trainable))
-            if l.name == 'transformer_encoder':
-                if l.trainable:
-                    l.trainable = False
-                logging.info("{}-->True to False".format(l.name, l.trainable))
-                pass
     logging.info(bert_model.summary())
 
     if init_checkpoint:
@@ -352,8 +339,7 @@ def run_bert(strategy,
       train_input_fn,
       eval_input_fn,
       run_eagerly=FLAGS.run_eagerly,
-      use_keras_compile_fit=FLAGS.use_keras_compile_fit,
-      is_training=FLAGS.is_training)
+      use_keras_compile_fit=FLAGS.use_keras_compile_fit)
 
   if FLAGS.model_export_path:
     # As Keras ModelCheckpoint callback used with Keras compile/fit() API

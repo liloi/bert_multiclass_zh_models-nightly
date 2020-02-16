@@ -544,6 +544,7 @@ def file_based_convert_examples_to_features(examples, label_list,
     writer.write(tf_example.SerializeToString())
   writer.close()
 
+
 def _truncate_seq_pair(tokens_a, tokens_b, max_length):
   """Truncates a sequence pair in place to the maximum length."""
 
@@ -559,6 +560,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
       tokens_a.pop()
     else:
       tokens_b.pop()
+
 
 def generate_tf_record_from_data_file(processor,
                                       data_dir,

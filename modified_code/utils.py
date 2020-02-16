@@ -29,7 +29,7 @@ class MetricPlot(object):
                 plt.subplot(class_num, 1, i + 1)
                 for m in {'precision', 'recall', 'f1-score'}:
                     plt.plot([report[v][m] for report in reports],
-                            label='Class {0} {1}'.format(v, m))
+                           label='Class {0} {1}'.format(v, m))
                     plt.legend(loc='lower right')
                     plt.ylabel('Class {}'.format(v))
                     plt.title('Class {} Curves'.format(v))

@@ -1,0 +1,25 @@
+{
+    "task_type": "bert_classification",
+    "processor_type": "BDBK",
+    "num_labels": 15,
+    "labels_list": [
+        "poi",
+        "pub",
+        "ins",
+        "sci",
+        "hist",
+        "other",
+        "human",
+        "soc",
+        "life",
+        "webfic",
+        "cul",
+        "med",
+        "play",
+        "nature",
+        "org"
+    ],
+    "train_data_size": 900,
+    "max_seq_length": 128,
+    "eval_data_size": 100
+}
