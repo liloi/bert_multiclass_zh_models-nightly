@@ -414,11 +414,10 @@ class BdbkProcessor(DataProcessor):
         """Creates examples for the training and dev sets."""
         examples = []
         for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
             guid = "%s-%s" % (set_type, i)
             label = self.process_text_fn(line[2])
             text_a = self.process_text_fn(line[1])
+            label = self.process_text_fn(line[2]) if len(line) >= 3 else None
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
@@ -545,7 +544,6 @@ def file_based_convert_examples_to_features(examples, label_list,
     writer.write(tf_example.SerializeToString())
   writer.close()
 
-
 def _truncate_seq_pair(tokens_a, tokens_b, max_length):
   """Truncates a sequence pair in place to the maximum length."""
 
@@ -561,7 +559,6 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
       tokens_a.pop()
     else:
       tokens_b.pop()
-
 
 def generate_tf_record_from_data_file(processor,
                                       data_dir,
