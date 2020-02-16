@@ -24,8 +24,8 @@ import os
 from absl import app
 from absl import flags
 from absl import logging
-import tensorflow as tf
 import custom_metrics
+import tensorflow as tf
 import pickle
 
 from official.modeling import model_training_utils
