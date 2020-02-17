@@ -415,6 +415,8 @@ class BdbkProcessor(DataProcessor):
         examples = []
         for (i, line) in enumerate(lines):
             guid = "%s-%s" % (set_type, i)
+            if i == 0:
+                continue
             label = self.process_text_fn(line[2])
             text_a = self.process_text_fn(line[1])
             label = self.process_text_fn(line[2]) if len(line) >= 3 else None
