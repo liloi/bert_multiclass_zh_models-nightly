@@ -32,11 +32,15 @@ class Metrics(Callback):
         _val_f1 = f1_score(val_targ, val_predict, average='macro')
         self.val_f1s.append(_val_f1)
         logs['val_f1'] = _val_f1
-
+        remain_list = []
+        val_union = np.union1d(val_targ, val_predict)
+        for i, v in enumerate(self.labels_list):
+            if i in val_union:
+                remain_list.append(v)
         # 一并计算三个指标
         report = classification_report(val_targ,
                                        val_predict,
-                                       target_names=self.labels_list,
+                                       target_names=remain_list,
                                        output_dict=True)
         self.reports.append(report)
 
