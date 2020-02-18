@@ -20,6 +20,7 @@ from __future__ import print_function
 import json
 import math
 import os
+import numpy as np
 
 from absl import app
 from absl import flags
@@ -63,6 +64,7 @@ flags.DEFINE_integer('test_batch_size', 32, 'Batch size for prediction.')
 flags.DEFINE_string('save_history_path', None, 'Path to history file.')
 flags.DEFINE_string('save_metric_path', None, 'Path to custom metric file.')
 flags.DEFINE_boolean('is_training', True, 'if params is trainable')
+flags.DEFINE_string('test_result_dir', None, 'test result')
 
 common_flags.define_common_bert_flags()
 
