@@ -225,11 +225,18 @@ def run_keras_compile_fit(model_dir,
     testing_dataset = test_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
-    new_model = tf.keras.models.load_model(FLAGS.model_export_path,
-              custom_objects={"KerasLayer": sub_model,
-                  "AdamWeightDecay": bert_model.optimizer,
-                  "classification_loss_fn": loss_fn})
-    pre_ret = new_model.predict(testing_dataset)
+    new_model = tf.keras.models.load_model(
+            FLAGS.model_export_path,
+            custom_objects={
+                "KerasLayer": sub_model,
+                "AdamWeightDecay": bert_model.optimizer,
+                "classification_loss_fn": loss_fn})
+    ret_list = new_model.predict(testing_dataset)
+    fout = open(FLAGS.test_result_dir, 'w')
+    for item in ret_list:
+        pre_ret = np.argmax(item, -1)
+        fout.write("{}\n".format(pre_ret))
+    fout.close()
     return bert_model, None, None
 
   with strategy.scope():
