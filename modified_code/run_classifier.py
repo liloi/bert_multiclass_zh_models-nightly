@@ -40,7 +40,7 @@ from official.utils.misc import keras_utils
 
 
 flags.DEFINE_enum(
-    'mode', 'train_and_eval', ['train_and_eval', 'export_only'],
+    'mode', 'train_and_eval', ['train_and_eval', 'export_only', 'predict'],
     'One of {"train_and_eval", "export_only"}. `train_and_eval`: '
     'trains the model and evaluates in the meantime. '
     '`export_only`: will take the latest checkpoint inside '
@@ -49,6 +49,8 @@ flags.DEFINE_string('train_data_path', None,
                     'Path to training data for BERT classifier.')
 flags.DEFINE_string('eval_data_path', None,
                     'Path to evaluation data for BERT classifier.')
+flags.DEFINE_string('test_data_path', None,
+                    'Path to testing data for BERT classifier.')
 # Model training specific flags.
 flags.DEFINE_string(
     'input_meta_data_path', None,
@@ -56,6 +58,7 @@ flags.DEFINE_string(
     'to be used for training and evaluation.')
 flags.DEFINE_integer('train_batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('eval_batch_size', 32, 'Batch size for evaluation.')
+flags.DEFINE_integer('test_batch_size', 32, 'Batch size for prediction.')
 
 flags.DEFINE_string('save_history_path', None, 'Path to history file.')
 flags.DEFINE_string('save_metric_path', None, 'Path to custom metric file.')
@@ -116,6 +119,7 @@ def run_bert_classifier(strategy,
                         init_checkpoint,
                         train_input_fn,
                         eval_input_fn,
+                        test_input_fn,
                         custom_callbacks=None,
                         run_eagerly=False,
                         use_keras_compile_fit=False):
@@ -171,6 +175,7 @@ def run_bert_classifier(strategy,
         _get_classifier_model,
         train_input_fn,
         eval_input_fn,
+        test_input_fn,
         loss_fn,
         metric_fn,
         init_checkpoint,
@@ -205,6 +210,7 @@ def run_keras_compile_fit(model_dir,
                           model_fn,
                           train_input_fn,
                           eval_input_fn,
+                          test_input_fn,
                           loss_fn,
                           metric_fn,
                           init_checkpoint,
@@ -215,13 +221,24 @@ def run_keras_compile_fit(model_dir,
                           custom_callbacks=None):
   """Runs BERT classifier model using Keras compile/fit API."""
 
+  if FLAGS.mode == 'predict':
+    testing_dataset = test_input_fn()
+    bert_model, sub_model = model_fn()
+    optimizer = bert_model.optimizer
+    new_model = tf.keras.models.load_model(FLAGS.model_export_path,
+              custom_objects={"KerasLayer": sub_model,
+                  "AdamWeightDecay": bert_model.optimizer,
+                  "classification_loss_fn": loss_fn})
+    pre_ret = new_model.predict(testing_dataset)
+    return bert_model, None, None
+
   with strategy.scope():
     training_dataset = train_input_fn()
     evaluation_dataset = eval_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
-    logging.info(bert_model.summary())
 
+    bert_model.summary()
     if init_checkpoint:
       checkpoint = tf.train.Checkpoint(model=sub_model)
       checkpoint.restore(init_checkpoint).assert_existing_objects_matched()
@@ -298,7 +315,8 @@ def run_bert(strategy,
              input_meta_data,
              model_config,
              train_input_fn=None,
-             eval_input_fn=None):
+             eval_input_fn=None,
+             test_input_fn=None):
   """Run BERT training."""
   if FLAGS.mode == 'export_only':
     # As Keras ModelCheckpoint callback used with Keras compile/fit() API
@@ -309,7 +327,7 @@ def run_bert(strategy,
                       model_config, FLAGS.model_dir)
     return
 
-  if FLAGS.mode != 'train_and_eval':
+  if FLAGS.mode != 'train_and_eval' and FLAGS.mode != 'predict':
     raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
   # Enables XLA in Session Config. Should not be set for TPU.
   keras_utils.set_config_v2(FLAGS.enable_xla)
@@ -318,8 +336,7 @@ def run_bert(strategy,
   train_data_size = input_meta_data['train_data_size']
   steps_per_epoch = int(train_data_size / FLAGS.train_batch_size)
   warmup_steps = int(epochs * train_data_size * 0.1 / FLAGS.train_batch_size)
-  eval_steps = int(
-      math.ceil(input_meta_data['eval_data_size'] / FLAGS.eval_batch_size))
+  eval_steps = int(math.ceil(input_meta_data['eval_data_size'] / FLAGS.eval_batch_size))
 
   if not strategy:
     raise ValueError('Distribution strategy has not been specified.')
@@ -338,10 +355,11 @@ def run_bert(strategy,
       FLAGS.init_checkpoint,
       train_input_fn,
       eval_input_fn,
+      test_input_fn,
       run_eagerly=FLAGS.run_eagerly,
       use_keras_compile_fit=FLAGS.use_keras_compile_fit)
 
-  if FLAGS.model_export_path:
+  if FLAGS.mode == 'train_and_eval' and FLAGS.model_export_path:
     # As Keras ModelCheckpoint callback used with Keras compile/fit() API
     # internally uses model.save_weights() to save checkpoints, we must
     # use model.load_weights() when Keras compile/fit() is used.
@@ -367,29 +385,48 @@ def main(_):
       num_gpus=FLAGS.num_gpus,
       tpu_address=FLAGS.tpu)
   max_seq_length = input_meta_data['max_seq_length']
-  train_input_fn = get_dataset_fn(
-      FLAGS.train_data_path,
-      max_seq_length,
-      FLAGS.train_batch_size,
-      is_training=True)
-  eval_input_fn = get_dataset_fn(
-      FLAGS.eval_data_path,
-      max_seq_length,
-      FLAGS.eval_batch_size,
-      is_training=False)
+
+  train_input_fn = None
+  if FLAGS.train_data_path:
+    train_input_fn = get_dataset_fn(
+        FLAGS.train_data_path,
+        max_seq_length,
+        FLAGS.train_batch_size,
+        is_training=True)
+  eval_input_fn = None
+  if FLAGS.eval_data_path:
+    eval_input_fn = get_dataset_fn(
+        FLAGS.eval_data_path,
+        max_seq_length,
+        FLAGS.eval_batch_size,
+        is_training=False)
+  test_input_fn = None
+  if FLAGS.test_data_path:
+    test_input_fn = get_dataset_fn(
+        FLAGS.test_data_path,
+        max_seq_length,
+        FLAGS.test_batch_size,
+        is_training=False)
 
   bert_config = bert_configs.BertConfig.from_json_file(FLAGS.bert_config_file)
-  _, history, custom_metric = run_bert(strategy, input_meta_data, bert_config, train_input_fn, eval_input_fn)
+  _, history, custom_metric = run_bert(strategy,
+                                       input_meta_data,
+                                       bert_config,
+                                       train_input_fn,
+                                       eval_input_fn,
+                                       test_input_fn)
 
-  with open(FLAGS.save_history_path, 'wb') as f:
-    pickle.dump(history.history, f)
-  save_metric = {
-          'f1': custom_metric.val_f1s,
-          'recall': custom_metric.val_recalls,
-          'precision': custom_metric.val_precisions,
-          'reports': custom_metric.reports}
-  with open(FLAGS.save_metric_path, 'wb') as f:
-    pickle.dump(save_metric, f)
+  if history:
+    with open(FLAGS.save_history_path, 'wb') as f:
+      pickle.dump(history.history, f)
+  if custom_metric:
+    save_metric = {
+            'f1': custom_metric.val_f1s,
+            'recall': custom_metric.val_recalls,
+            'precision': custom_metric.val_precisions,
+            'reports': custom_metric.reports}
+    with open(FLAGS.save_metric_path, 'wb') as f:
+      pickle.dump(save_metric, f)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')

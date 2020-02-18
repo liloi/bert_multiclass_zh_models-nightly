@@ -19,7 +19,8 @@
         "nature",
         "org"
     ],
-    "train_data_size": 900,
     "max_seq_length": 128,
-    "eval_data_size": 100
+    "train_data_size": 400,
+    "eval_data_size": 100,
+    "test_data_size": 1
 }

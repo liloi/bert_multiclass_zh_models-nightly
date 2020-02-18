@@ -82,6 +82,11 @@ flags.DEFINE_string(
     "The path in which generated training input data will be written as tf"
     " records.")
 
+flags.DEFINE_string(
+    "test_data_output_path", None,
+    "The path in which generated testing input data will be written as tf"
+    " records.")
+
 flags.DEFINE_string("meta_data_file_path", None,
                     "The path in which input meta data will be written.")
 
@@ -140,6 +145,7 @@ def generate_classifier_dataset():
       tokenizer,
       train_data_output_path=FLAGS.train_data_output_path,
       eval_data_output_path=FLAGS.eval_data_output_path,
+      test_data_output_path=FLAGS.test_data_output_path,
       max_seq_length=FLAGS.max_seq_length)
 
 
