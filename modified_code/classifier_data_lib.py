@@ -402,8 +402,24 @@ class BdbkProcessor(DataProcessor):
 
     def get_labels(self):
         """See base class."""
-        #return ["poi", "出版物", "机构", "科技", "历史军事", "其他", "人物", "社会", "生活", "网络小说", "文化", "医疗", "娱乐", "自然", "组织"]
-        return ['poi', 'pub', 'ins', 'sci', 'hist', 'other', 'human', 'soc', 'life', 'webfic', 'cul', 'med', 'play', 'nature', 'org']
+        return [
+            'human',
+            'poi',
+            'publication',
+            'organization',
+            'webfic',
+            'literature',
+            'entertainment',
+            'science',
+            'other',
+            'goods',
+            'society',
+            'food',
+            'culture',
+            'nature',
+            'medical',
+            'military'
+        ]
 
     @staticmethod
     def get_processor_name():
