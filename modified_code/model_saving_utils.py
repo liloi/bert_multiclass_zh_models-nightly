@@ -108,14 +108,6 @@ def export_bert_model(model_export_path: typing.Text,
           latest_checkpoint_file).assert_existing_objects_matched()
 
   model.save(model_export_path, include_optimizer=True, overwrite=True, save_format='h5')
-  '''
-  #model.save(model_export_path, include_optimizer=False, save_format='tf', overwrite=True)
-  import pdb;pdb.set_trace()
-  import do_predict
-  dataset = do_predict.main(None)
-  new_model = tf.keras.models.load_model("{}/liloi.h5".format(model_export_path))
-  new_model.predict(dataset)
-  '''
   return
 
 class BertModelCheckpoint(tf.keras.callbacks.Callback):

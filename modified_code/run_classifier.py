@@ -424,18 +424,25 @@ def main(_):
         is_training=False)
 
   bert_config = bert_configs.BertConfig.from_json_file(FLAGS.bert_config_file)
-  _, history, custom_metric = run_bert(strategy,
-                                       input_meta_data,
-                                       bert_config,
-                                       train_input_fn,
-                                       eval_input_fn,
-                                       test_input_fn)
+  trained_model, history, custom_metric = run_bert(strategy,
+                                                   input_meta_data,
+                                                   bert_config,
+                                                   train_input_fn,
+                                                   eval_input_fn,
+                                                   test_input_fn)
   # save metrics
   _save_metrics(history, custom_metrics)
 
-  #testing_dataset = test_input_fn()
-  #accuracy_fn = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
-  #pre_ret = new_model.predict(testing_dataset)
+  # testing
+  pdb.set_trace()
+  testing_dataset = test_input_fn()
+  test_data_list = list(testing_dataset.as_numpy_iterator())
+  test_targ = np.concatenate([item[1] for item in test_data_list])
+  test_predict = np.argmax(trained_model.predict(testing_dataset), -1)
+
+  test_accu = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
+  test_accu.update_state(test_targ, test_predict)
+  logging.info('test_accuracy': test_accu.result().numpy())
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')

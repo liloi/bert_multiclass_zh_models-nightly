@@ -14,11 +14,8 @@ class Metrics(Callback):
         self.labels_list = labels_list
 
     def on_epoch_end(self, epoch, logs={}):
-        import pdb;pdb.set_trace()
         eval_data_list = list(self.val_data.as_numpy_iterator())
         val_targ = np.concatenate([item[1] for item in eval_data_list])
-        #for item in eval_data_list:
-        #    val_targ = np.concatenate([val_targ, item[1]])
         val_predict = np.argmax(self.model.predict(self.val_data), -1)
         #if len(val_targ.shape) == 2 and val_targ.shape[1] != 1:
         #    val_targ = np.argmax(val_targ, -1)
