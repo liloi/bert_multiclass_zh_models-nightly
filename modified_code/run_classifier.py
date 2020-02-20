@@ -434,7 +434,7 @@ def main(_):
   _save_metrics(history, custom_metric)
 
   # testing
-  pdb.set_trace()
+  import pdb;pdb.set_trace()
   testing_dataset = test_input_fn()
   test_data_list = list(testing_dataset.as_numpy_iterator())
   test_targ = np.concatenate([item[1] for item in test_data_list])
