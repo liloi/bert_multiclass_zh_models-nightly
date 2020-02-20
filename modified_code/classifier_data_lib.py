@@ -97,7 +97,6 @@ class DataProcessor(object):
     """Reads a tab separated value file."""
     with tf.io.gfile.GFile(input_file, "r") as f:
       reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
-      logging.info('file length={}'.format(len(list(reader))))
       lines = []
       for line in reader:
         lines.append(line)
