@@ -122,7 +122,6 @@ def run_bert_classifier(strategy,
                         init_checkpoint,
                         train_input_fn,
                         eval_input_fn,
-                        test_input_fn,
                         custom_callbacks=None,
                         run_eagerly=False,
                         use_keras_compile_fit=False):
@@ -179,7 +178,6 @@ def run_bert_classifier(strategy,
         _get_classifier_model,
         train_input_fn,
         eval_input_fn,
-        test_input_fn,
         loss_fn,
         metric_fn,
         init_checkpoint,
@@ -214,7 +212,6 @@ def run_keras_compile_fit(model_dir,
                           model_fn,
                           train_input_fn,
                           eval_input_fn,
-                          test_input_fn,
                           loss_fn,
                           metric_fn,
                           init_checkpoint,
@@ -225,6 +222,7 @@ def run_keras_compile_fit(model_dir,
                           custom_callbacks=None):
   """Runs BERT classifier model using Keras compile/fit API."""
 
+  """
   if FLAGS.mode == 'predict':
     testing_dataset = test_input_fn()
     bert_model, sub_model = model_fn()
@@ -236,6 +234,7 @@ def run_keras_compile_fit(model_dir,
     pre_ret = new_model.predict(testing_dataset)
     logging.info('liran05:{}'.format(pre_ret))
     return bert_model, None, None
+  """
 
   with strategy.scope():
     training_dataset = train_input_fn()
@@ -320,8 +319,7 @@ def run_bert(strategy,
              input_meta_data,
              model_config,
              train_input_fn=None,
-             eval_input_fn=None,
-             test_input_fn=None):
+             eval_input_fn=None):
   """Run BERT training."""
   if FLAGS.mode == 'export_only':
     # As Keras ModelCheckpoint callback used with Keras compile/fit() API
@@ -332,7 +330,7 @@ def run_bert(strategy,
                       model_config, FLAGS.model_dir)
     return
 
-  if FLAGS.mode != 'train_and_eval' and FLAGS.mode != 'predict':
+  if FLAGS.mode != 'train_and_eval':
     raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
   # Enables XLA in Session Config. Should not be set for TPU.
   #keras_utils.set_config_v2(FLAGS.enable_xla)
@@ -360,7 +358,6 @@ def run_bert(strategy,
       FLAGS.init_checkpoint,
       train_input_fn,
       eval_input_fn,
-      test_input_fn,
       run_eagerly=FLAGS.run_eagerly,
       use_keras_compile_fit=FLAGS.use_keras_compile_fit)
 
@@ -430,23 +427,24 @@ def main(_):
                                                    input_meta_data,
                                                    bert_config,
                                                    train_input_fn,
-                                                   eval_input_fn,
-                                                   test_input_fn)
-  # save metrics
-  _save_metrics(history, custom_metric)
+                                                   eval_input_fn)
 
-  # testing
+  # add testing accuracy process
   testing_dataset = test_input_fn()
   test_data_list = list(testing_dataset.as_numpy_iterator())
   test_targ = []
   for item in test_data_list:
     test_targ += [[i] for i in item[1]]
   test_targ = np.array(test_targ)
-  test_predict = trained_model.predict(testing_dataset)
+  test_pred = trained_model.predict(testing_dataset)
 
   test_accu = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
-  _ = test_accu.update_state(test_targ, test_predict)
-  logging.info('test_accuracy:', test_accu.result().numpy())
+  _ = test_accu.update_state(test_targ, test_pred)
+  logging.info('test_accuracy: {}'.format(test_accu.result().numpy()))
+
+  # save metrics
+  _save_metrics(history, custom_metric)
+
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')
