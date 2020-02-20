@@ -36,7 +36,7 @@ from official.nlp.bert import configs as bert_configs
 from official.nlp.bert import input_pipeline
 from official.nlp.bert import model_saving_utils
 from official.utils.misc import distribution_utils
-from official.utils.misc import keras_utils
+#from official.utils.misc import keras_utils
 
 
 flags.DEFINE_enum(
@@ -165,7 +165,7 @@ def run_bert_classifier(strategy,
   # correct device and strategy scope.
   def metric_fn():
     return tf.keras.metrics.SparseCategoricalAccuracy(
-        'test_accuracy', dtype=tf.float32)
+        'val_accuracy', dtype=tf.float32)
 
   if use_keras_compile_fit:
     # Start training using Keras compile/fit API.
@@ -333,7 +333,7 @@ def run_bert(strategy,
   if FLAGS.mode != 'train_and_eval' and FLAGS.mode != 'predict':
     raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
   # Enables XLA in Session Config. Should not be set for TPU.
-  keras_utils.set_config_v2(FLAGS.enable_xla)
+  #keras_utils.set_config_v2(FLAGS.enable_xla)
 
   epochs = FLAGS.num_train_epochs
   train_data_size = input_meta_data['train_data_size']
@@ -372,6 +372,18 @@ def run_bert(strategy,
         restore_model_using_load_weights=FLAGS.use_keras_compile_fit)
   return trained_model, history, custom_metric
 
+def _save_metrics(history, custom_metrics):
+  if history:
+    with open(FLAGS.save_history_path, 'wb') as f:
+      pickle.dump(history.history, f)
+  if custom_metric:
+    save_metric = {
+            'f1': custom_metric.val_f1s,
+            'recall': custom_metric.val_recalls,
+            'precision': custom_metric.val_precisions,
+            'reports': custom_metric.reports}
+    with open(FLAGS.save_metric_path, 'wb') as f:
+      pickle.dump(save_metric, f)
 
 def main(_):
   # Users should always run this script under TF 2.x
@@ -418,18 +430,13 @@ def main(_):
                                        train_input_fn,
                                        eval_input_fn,
                                        test_input_fn)
+  # save metrics
+  _save_metrics(history, custom_metrics)
 
-  if history:
-    with open(FLAGS.save_history_path, 'wb') as f:
-      pickle.dump(history.history, f)
-  if custom_metric:
-    save_metric = {
-            'f1': custom_metric.val_f1s,
-            'recall': custom_metric.val_recalls,
-            'precision': custom_metric.val_precisions,
-            'reports': custom_metric.reports}
-    with open(FLAGS.save_metric_path, 'wb') as f:
-      pickle.dump(save_metric, f)
+  testing_dataset = test_input_fn()
+  accuracy_fn = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
+  accuracy_fn.update_state(
+  pre_ret = new_model.predict(testing_dataset)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')

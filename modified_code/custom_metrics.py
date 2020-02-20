@@ -19,7 +19,7 @@ class Metrics(Callback):
         val_targ = self.validation_data[1]
         if len(val_targ.shape) == 2 and val_targ.shape[1] != 1:
             val_targ = np.argmax(val_targ, -1)
-
+        import pdb;pdb.set_trace()
         # 分别计算macro f1, recall, precision
         _val_precision = precision_score(val_targ, val_predict, average='macro')
         self.val_precisions.append(_val_precision)
