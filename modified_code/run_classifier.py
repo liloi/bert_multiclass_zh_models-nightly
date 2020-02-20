@@ -254,9 +254,8 @@ def run_keras_compile_fit(model_dir,
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         checkpoint_path, save_weights_only=True)
 
-    eval_data_list = list(evaluation_dataset.as_numpy_iterator())
-    import pdb;pdb.set_trace()
-    custom_metric = custom_metrics.Metrics(labels_list, valid_data=eval_data_list[0])
+    #eval_data_list = list(evaluation_dataset.as_numpy_iterator())
+    custom_metric = custom_metrics.Metrics(labels_list, valid_data=evaluation_dataset)
 
     if custom_callbacks is not None:
       custom_callbacks += [custom_metric, summary_callback, checkpoint_callback]

@@ -6,20 +6,23 @@ import pdb
 class Metrics(Callback):
     def __init__(self, labels_list, valid_data):
         super(Metrics, self).__init__()
-        self.validation_data = valid_data
+        self.val_data = valid_data # tf.data.Dataset
         self.val_f1s = []
         self.val_recalls = []
         self.val_precisions = []
         self.reports = []
         self.labels_list = labels_list
 
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        val_predict = np.argmax(self.model.predict(self.validation_data[0]), -1)
-        val_targ = self.validation_data[1]
-        if len(val_targ.shape) == 2 and val_targ.shape[1] != 1:
-            val_targ = np.argmax(val_targ, -1)
+    def on_epoch_end(self, epoch, logs={}):
         import pdb;pdb.set_trace()
+        eval_data_list = list(self.val_data.as_numpy_iterator())
+        val_targ = np.array([])
+        for item in len(eval_data_list):
+            a_list = eval_data_list[1]
+            val_targ = np.concatenate([val_targ, a_list])
+        val_predict = np.argmax(self.model.predict(self.val_data), -1)
+        #if len(val_targ.shape) == 2 and val_targ.shape[1] != 1:
+        #    val_targ = np.argmax(val_targ, -1)
         # 分别计算macro f1, recall, precision
         _val_precision = precision_score(val_targ, val_predict, average='macro')
         self.val_precisions.append(_val_precision)
