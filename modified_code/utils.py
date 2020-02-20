@@ -73,7 +73,7 @@ class MetricPlot(object):
         Args:
             history: history callback of fitting a tensorflow keras model
         """
-        with open(self.file_pickle + '/history/hist.pickle', 'rb') as f:
+        with open(self.file_pickle + '/metric/hist.pickle', 'rb') as f:
             history = pickle.load(f)
 
             loss = history['loss']
