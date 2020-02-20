@@ -165,7 +165,7 @@ def run_bert_classifier(strategy,
   # correct device and strategy scope.
   def metric_fn():
     return tf.keras.metrics.SparseCategoricalAccuracy(
-        'val_accuracy', dtype=tf.float32)
+        'accuracy', dtype=tf.float32)
 
   if use_keras_compile_fit:
     # Start training using Keras compile/fit API.
@@ -372,7 +372,7 @@ def run_bert(strategy,
         restore_model_using_load_weights=FLAGS.use_keras_compile_fit)
   return trained_model, history, custom_metric
 
-def _save_metrics(history, custom_metrics):
+def _save_metrics(history, custom_metric):
   if history:
     with open(FLAGS.save_history_path, 'wb') as f:
       pickle.dump(history.history, f)
@@ -431,7 +431,7 @@ def main(_):
                                                    eval_input_fn,
                                                    test_input_fn)
   # save metrics
-  _save_metrics(history, custom_metrics)
+  _save_metrics(history, custom_metric)
 
   # testing
   pdb.set_trace()
@@ -442,7 +442,7 @@ def main(_):
 
   test_accu = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
   test_accu.update_state(test_targ, test_predict)
-  logging.info('test_accuracy': test_accu.result().numpy())
+  logging.info('test_accuracy:', test_accu.result().numpy())
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')
