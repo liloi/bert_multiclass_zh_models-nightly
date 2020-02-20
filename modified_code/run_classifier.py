@@ -24,6 +24,8 @@ import os
 from absl import app
 from absl import flags
 from absl import logging
+
+import numpy as np
 import custom_metrics
 import pickle
 import tensorflow as tf
@@ -434,14 +436,16 @@ def main(_):
   _save_metrics(history, custom_metric)
 
   # testing
-  import pdb;pdb.set_trace()
   testing_dataset = test_input_fn()
   test_data_list = list(testing_dataset.as_numpy_iterator())
-  test_targ = np.concatenate([item[1] for item in test_data_list])
-  test_predict = np.argmax(trained_model.predict(testing_dataset), -1)
+  test_targ = []
+  for item in test_data_list:
+    test_targ += [[i] for i in item[1]]
+  test_targ = np.array(test_targ)
+  test_predict = trained_model.predict(testing_dataset)
 
   test_accu = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
-  test_accu.update_state(test_targ, test_predict)
+  _ = test_accu.update_state(test_targ, test_predict)
   logging.info('test_accuracy:', test_accu.result().numpy())
 
 if __name__ == '__main__':
