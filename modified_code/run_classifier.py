@@ -20,14 +20,13 @@ from __future__ import print_function
 import json
 import math
 import os
-import numpy as np
 
 from absl import app
 from absl import flags
 from absl import logging
 import custom_metrics
-import tensorflow as tf
 import pickle
+import tensorflow as tf
 
 from official.modeling import model_training_utils
 from official.nlp import optimization
@@ -64,7 +63,6 @@ flags.DEFINE_integer('test_batch_size', 32, 'Batch size for prediction.')
 flags.DEFINE_string('save_history_path', None, 'Path to history file.')
 flags.DEFINE_string('save_metric_path', None, 'Path to custom metric file.')
 flags.DEFINE_boolean('is_training', True, 'if params is trainable')
-flags.DEFINE_string('test_result_dir', None, 'test result')
 
 common_flags.define_common_bert_flags()
 
@@ -136,7 +134,8 @@ def run_bert_classifier(strategy,
             bert_config,
             num_classes,
             max_seq_length,
-            hub_module_url=FLAGS.hub_module_url))
+            hub_module_url=FLAGS.hub_module_url,
+            hub_module_trainable=FLAGS.hub_module_trainable))
     classifier_model.optimizer = optimization.create_optimizer(
         initial_lr, steps_per_epoch * epochs, warmup_steps)
     if FLAGS.fp16_implementation == 'graph_rewrite':
@@ -227,18 +226,12 @@ def run_keras_compile_fit(model_dir,
     testing_dataset = test_input_fn()
     bert_model, sub_model = model_fn()
     optimizer = bert_model.optimizer
-    new_model = tf.keras.models.load_model(
-            FLAGS.model_export_path,
-            custom_objects={
-                "KerasLayer": sub_model,
-                "AdamWeightDecay": bert_model.optimizer,
-                "classification_loss_fn": loss_fn})
-    ret_list = new_model.predict(testing_dataset)
-    fout = open(FLAGS.test_result_dir, 'w')
-    for item in ret_list:
-        pre_ret = np.argmax(item, -1)
-        fout.write("{}\n".format(pre_ret))
-    fout.close()
+    new_model = tf.keras.models.load_model(FLAGS.model_export_path,
+              custom_objects={"KerasLayer": sub_model,
+                  "AdamWeightDecay": bert_model.optimizer,
+                  "classification_loss_fn": loss_fn})
+    pre_ret = new_model.predict(testing_dataset)
+    logging.info('liran05:{}'.format(pre_ret))
     return bert_model, None, None
 
   with strategy.scope():
