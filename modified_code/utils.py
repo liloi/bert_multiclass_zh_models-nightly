@@ -68,24 +68,24 @@ class MetricPlot(object):
             plt.show()
 
     def draw_history_curves(self):
-        """Plot the learning curves of loss and macro f1 score 
+        """Plot the learning curves of loss and macro f1 score
         for the training and validation datasets.
 
         Args:
-            history: history callback of fitting a tensorflow keras model 
+            history: history callback of fitting a tensorflow keras model
         """
         with open(self.file_pickle + '/history/hist.pickle', 'rb') as f:
             history = pickle.load(f)
 
             loss = history['loss']
             val_loss = history['val_loss']
-            accuracy = history['test_accuracy']
-            val_accuracy = history['val_test_accuracy']
+            accuracy = history['accuracy']
+            val_accuracy = history['val_accuracy']
 
             epochs = len(loss)
 
             style.use("bmh")
-            plt.figure(figsize=(8, 8)) 
+            plt.figure(figsize=(8, 8))
 
             plt.subplot(2, 1, 1)
             plt.plot(range(1, epochs+1), loss, label='Training Loss')

@@ -433,10 +433,9 @@ def main(_):
   # save metrics
   _save_metrics(history, custom_metrics)
 
-  testing_dataset = test_input_fn()
-  accuracy_fn = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
-  accuracy_fn.update_state(
-  pre_ret = new_model.predict(testing_dataset)
+  #testing_dataset = test_input_fn()
+  #accuracy_fn = tf.keras.metrics.SparseCategoricalAccuracy('test_accuracy', dtype=tf.float32)
+  #pre_ret = new_model.predict(testing_dataset)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('bert_config_file')
