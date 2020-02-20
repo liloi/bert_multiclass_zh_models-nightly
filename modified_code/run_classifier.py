@@ -255,6 +255,7 @@ def run_keras_compile_fit(model_dir,
         checkpoint_path, save_weights_only=True)
 
     eval_data_list = list(evaluation_dataset.as_numpy_iterator())
+    import pdb;pdb.set_trace()
     custom_metric = custom_metrics.Metrics(labels_list, valid_data=eval_data_list[0])
 
     if custom_callbacks is not None:
