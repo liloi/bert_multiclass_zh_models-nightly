@@ -17,7 +17,7 @@ class Metrics(Callback):
         import pdb;pdb.set_trace()
         eval_data_list = list(self.val_data.as_numpy_iterator())
         val_targ = np.array([])
-        for item in len(eval_data_list):
+        for item in eval_data_list:
             a_list = eval_data_list[1]
             val_targ = np.concatenate([val_targ, a_list])
         val_predict = np.argmax(self.model.predict(self.val_data), -1)
