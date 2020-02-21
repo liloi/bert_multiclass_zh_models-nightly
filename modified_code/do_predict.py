@@ -84,11 +84,13 @@ def main(_):
             input_meta_data['max_seq_length'],
             hub_module_url=FLAGS.hub_module_url,
             hub_module_trainable=False))
+
+    epochs = FLAGS.num_train_epochs
+    steps_per_epoch = int(70000 / 32)
+    warmup_steps = int(2 * 70000 * 0.1 / 32)
+
     classifier_model.optimizer = optimization.create_optimizer(
-        initial_lr, steps_per_epoch * epochs, warmup_steps)
-    if FLAGS.fp16_implementation == 'graph_rewrite':
-      classifier_model.optimizer = tf.train.experimental.enable_mixed_precision_graph_rewrite(
-          classifier_model.optimizer)
+        2e-5, steps_per_epoch * 2, warmup_steps)
     return classifier_model, core_model
 
   predict_input_fn = get_dataset_fn(
