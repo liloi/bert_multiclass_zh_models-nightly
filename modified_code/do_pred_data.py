@@ -25,7 +25,7 @@ from absl import app
 from absl import flags
 import tensorflow as tf
 
-from official.nlp.bert import classifier_data_lib
+from official.nlp.data import classifier_data_lib
 from official.nlp.bert import tokenization
 
 FLAGS = flags.FLAGS
