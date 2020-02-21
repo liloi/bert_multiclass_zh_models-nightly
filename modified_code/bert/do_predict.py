@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import json
 import math
+import numpy as np
 import os
 
 from absl import app
@@ -37,6 +38,8 @@ from official.nlp.bert import input_pipeline
 
 flags.DEFINE_string('predict_data_path', None,
                     'Path to testing data for BERT classifier.')
+flags.DEFINE_string('predict_output_dir', None,
+                    'dir to predict output.')
 flags.DEFINE_string(
     'input_meta_data_path', None,
     'Path to file that contains meta data about input '
@@ -90,11 +93,11 @@ def main(_):
 
   with tf.io.gfile.GFile(FLAGS.input_meta_data_path, 'rb') as reader:
     input_meta_data = json.loads(reader.read().decode('utf-8'))
+  num_classes = input_meta_data['num_labels']
 
   def _get_classifier_model():
     """Gets a classifier model."""
     bert_config = bert_configs.BertConfig.from_json_file(FLAGS.bert_config_file)
-    num_classes = input_meta_data['num_labels']
     classifier_model, core_model = (
         bert_models.classifier_model(
             bert_config,
@@ -126,8 +129,13 @@ def main(_):
       custom_objects={"KerasLayer": sub_model,
                       "AdamWeightDecay": bert_model.optimizer,
                       "classification_loss_fn": loss_fn})
-  predict_ret = new_model.predict(predict_dataset)
-  logging.info('liran05:{}'.format(pre_ret))
+  pred_prob_list = new_model.predict(predict_dataset)
+  pred_list = np.argmax(pred_prob_list, -1)
+  class_list = input_meta_data['labels_list']
+  with open(FLAGS.predict_output_dir, 'w') as fout:
+      for item in pred_list:
+          eng_label = class_list[int(item)]
+          fout.write('{}\t{}\n'.format(item, eng_label))
 
 
 if __name__ == '__main__':
