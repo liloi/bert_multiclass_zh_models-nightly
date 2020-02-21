@@ -38,7 +38,7 @@ from official.nlp.bert import configs as bert_configs
 from official.nlp.bert import input_pipeline
 from official.nlp.bert import model_saving_utils
 from official.utils.misc import distribution_utils
-#from official.utils.misc import keras_utils
+from official.utils.misc import keras_utils
 
 
 flags.DEFINE_enum(
@@ -255,7 +255,6 @@ def run_keras_compile_fit(model_dir,
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         checkpoint_path, save_weights_only=True)
 
-    #eval_data_list = list(evaluation_dataset.as_numpy_iterator())
     custom_metric = custom_metrics.Metrics(labels_list, valid_data=evaluation_dataset)
 
     if custom_callbacks is not None:
@@ -333,7 +332,7 @@ def run_bert(strategy,
   if FLAGS.mode != 'train_and_eval':
     raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
   # Enables XLA in Session Config. Should not be set for TPU.
-  #keras_utils.set_config_v2(FLAGS.enable_xla)
+  keras_utils.set_config_v2(FLAGS.enable_xla)
 
   epochs = FLAGS.num_train_epochs
   train_data_size = input_meta_data['train_data_size']

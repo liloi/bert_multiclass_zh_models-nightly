@@ -611,11 +611,12 @@ def generate_tf_record_from_data_file(processor,
   assert train_data_output_path or eval_data_output_path or test_data_output_path
 
   label_list = processor.get_labels()
-  if train_data_output_path:
-    train_input_data_examples = processor.get_train_examples(data_dir)
-    file_based_convert_examples_to_features(train_input_data_examples, label_list,
-                                            max_seq_length, tokenizer,
-                                            train_data_output_path)
+  assert train_data_output_path
+  train_input_data_examples = processor.get_train_examples(data_dir)
+  file_based_convert_examples_to_features(train_input_data_examples, label_list,
+                                          max_seq_length, tokenizer,
+                                          train_data_output_path)
+  num_training_data = len(train_input_data_examples)
 
   if eval_data_output_path:
     eval_input_data_examples = processor.get_dev_examples(data_dir)
@@ -633,12 +634,11 @@ def generate_tf_record_from_data_file(processor,
       "task_type": "bert_classification",
       "processor_type": processor.get_processor_name(),
       "num_labels": len(processor.get_labels()),
+      "train_data_size": num_training_data,
       "labels_list": processor.get_labels(),
       "max_seq_length": max_seq_length,
   }
 
-  if train_data_output_path:
-    meta_data["train_data_size"] = len(train_input_data_examples)
   if eval_data_output_path:
     meta_data["eval_data_size"] = len(eval_input_data_examples)
   if test_data_output_path:
