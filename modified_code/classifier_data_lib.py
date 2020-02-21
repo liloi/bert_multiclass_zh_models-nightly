@@ -400,6 +400,9 @@ class BdbkProcessor(DataProcessor):
         """See base class."""
         return self._create_examples(self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
 
+    def get_predict_examples(self, data_dir):
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "predict.tsv")), "predict")
+
     def get_labels(self):
         """See base class."""
         return [
@@ -640,4 +643,29 @@ def generate_tf_record_from_data_file(processor,
     meta_data["eval_data_size"] = len(eval_input_data_examples)
   if test_data_output_path:
     meta_data["test_data_size"] = len(test_input_data_examples)
+  return meta_data
+
+
+def generate_predict_tf_record_from_data_file(processor,
+                                              data_dir,
+                                              tokenizer,
+                                              predict_data_output_path=None,
+                                              max_seq_length=128):
+  assert predict_data_output_path
+
+  label_list = processor.get_labels()
+  predict_input_data_examples = processor.get_predict_examples(data_dir)
+  file_based_convert_examples_to_features(predict_input_data_examples, label_list,
+                                          max_seq_length, tokenizer,
+                                          predict_data_output_path)
+  meta_data = {
+      "task_type": "bert_classification",
+      "processor_type": processor.get_processor_name(),
+      "num_labels": len(processor.get_labels()),
+      "labels_list": processor.get_labels(),
+      "max_seq_length": max_seq_length,
+  }
+
+  if predict_data_output_path:
+    meta_data["predict_data_size"] = len(predict_input_data_examples)
   return meta_data
