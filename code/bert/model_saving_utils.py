@@ -108,7 +108,7 @@ def export_bert_model(model_export_path: typing.Text,
           latest_checkpoint_file).assert_existing_objects_matched()
 
   model.save(model_export_path, include_optimizer=True, overwrite=True, save_format='h5')
-  return
+
 
 class BertModelCheckpoint(tf.keras.callbacks.Callback):
   """Keras callback that saves model at the end of every epoch."""
